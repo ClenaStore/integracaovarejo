@@ -1,127 +1,260 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Recebimentos • Mercatto</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f9fafb;
-      margin: 0;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-      color: #2563eb;
-    }
-    .filtros {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-    input, button {
-      padding: 8px 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 14px;
-    }
-    button {
-      background: #2563eb;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #1d4ed8;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: white;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    th, td {
-      padding: 12px;
-      border: 1px solid #e5e7eb;
-      text-align: left;
-    }
-    th {
-      background: #2563eb;
-      color: white;
-    }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Recebimentos • Carneiro Mercatto</title>
+  <link rel="stylesheet" href="/public/style.css" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <h1>Recebimentos</h1>
+  <main class="container">
+    <header class="header">
+      <h1>Recebimentos</h1>
+      <div class="filters">
+        <label>
+          Data Inicial:
+          <input type="date" id="dataInicial" />
+        </label>
+        <label>
+          Data Final:
+          <input type="date" id="dataFinal" />
+        </label>
+        <button id="btnFiltrar">Filtrar</button>
+      </div>
+    </header>
 
-  <div class="filtros">
-    <label>Data Inicial: <input type="date" id="dataInicial"></label>
-    <label>Data Final: <input type="date" id="dataFinal"></label>
-    <button onclick="carregarDados()">Filtrar</button>
-  </div>
+    <section class="cards">
+      <article class="card">
+        <h2>CARNEIRO MERCATTO RESTAURANTE</h2>
+        <div class="total"><span id="totalRestaurante">—</span></div>
+        <ul class="lista">
+          <li>💵 DINHEIRO: <strong id="rest_dinheiro">—</strong></li>
+          <li>💳 CRÉDITO: <strong id="rest_credito">—</strong></li>
+          <li>🏧 DÉBITO: <strong id="rest_debito">—</strong></li>
+          <li>🍽️ CONSUMO INTERNO: <strong id="rest_consumo">—</strong></li>
+          <li>🌐 ONLINE: <strong id="rest_online">—</strong></li>
+          <li>🎁 BONIFICAÇÃO: <strong id="rest_bonificacao">—</strong></li>
+          <li>⚡ PIX: <strong id="rest_pix">—</strong></li>
+          <li>🎟️ VOUCHER: <strong id="rest_voucher">—</strong></li>
+          <li>📦 BOLETO: <strong id="rest_boleto">—</strong></li>
+          <li>🧾 CREDIÁRIO: <strong id="rest_crediario">—</strong></li>
+          <li>🪪 CATÁLOGO DELIVERY: <strong id="rest_catalogo">—</strong></li>
+          <li>👥 CONSUMO SÓCIO: <strong id="rest_consumo_socio">—</strong></li>
+          <li>📣 MARKETING: <strong id="rest_marketing">—</strong></li>
+          <li>🏦 TRANSF. BANCÁRIA: <strong id="rest_transf">—</strong></li>
+          <li>🧑‍🍳 ERROS GARÇOM: <strong id="rest_erros">—</strong></li>
+          <li>🚫 SEM FATURAMENTO: <strong id="rest_semfat">—</strong></li>
+          <li>🧩 OUTROS: <strong id="rest_outros">—</strong></li>
+        </ul>
 
-  <table id="tabela">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Data</th>
-        <th>Valor</th>
-        <th>Forma</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+        <div class="box-destaque">
+          <div>💠 Faturamento do Carneiro Mercatto</div>
+          <div class="valor-grande" id="faturamentoTotal">—</div>
+          <small>(Restaurante + Empório)</small>
+        </div>
 
-<script>
-  async function carregarDados() {
-    try {
-      const dataInicial = document.getElementById("dataInicial").value;
-      const dataFinal = document.getElementById("dataFinal").value;
+        <div class="box-destaque">
+          <div>🍽️ Almoço Mercatto</div>
+          <div class="valor-grande" id="almocoMercatto">—</div>
+          <small>vendas entre 03:00 e 16:00</small>
+        </div>
 
-      // 🔹 Pega token do endpoint serverless no Vercel
-      const login = await fetch("/api/login");
-      const { accessToken } = await login.json();
+        <canvas id="chartRest" height="160"></canvas>
+      </article>
 
-      // 🔹 Monta query de filtro
-      let url = `/api/recebimentos`;
-      const params = [];
-      if (dataInicial) params.push(`dataInicial=${dataInicial}`);
-      if (dataFinal) params.push(`dataFinal=${dataFinal}`);
-      if (params.length) url += "?" + params.join("&");
+      <article class="card">
+        <h2>CARNEIRO MERCATTO EMPÓRIO</h2>
+        <div class="total"><span id="totalEmporio">—</span></div>
+        <ul class="lista">
+          <li>💵 DINHEIRO: <strong id="emp_dinheiro">—</strong></li>
+          <li>💳 CRÉDITO: <strong id="emp_credito">—</strong></li>
+          <li>🏧 DÉBITO: <strong id="emp_debito">—</strong></li>
+          <li>🍽️ CONSUMO INTERNO: <strong id="emp_consumo">—</strong></li>
+          <li>🌐 ONLINE: <strong id="emp_online">—</strong></li>
+          <li>🎁 BONIFICAÇÃO: <strong id="emp_bonificacao">—</strong></li>
+          <li>⚡ PIX: <strong id="emp_pix">—</strong></li>
+          <li>🎟️ VOUCHER: <strong id="emp_voucher">—</strong></li>
+          <li>📦 BOLETO: <strong id="emp_boleto">—</strong></li>
+          <li>🧾 CREDIÁRIO: <strong id="emp_crediario">—</strong></li>
+          <li>🪪 CATÁLOGO DELIVERY: <strong id="emp_catalogo">—</strong></li>
+          <li>👥 CONSUMO SÓCIO: <strong id="emp_consumo_socio">—</strong></li>
+          <li>📣 MARKETING: <strong id="emp_marketing">—</strong></li>
+          <li>🏦 TRANSF. BANCÁRIA: <strong id="emp_transf">—</strong></li>
+          <li>🧑‍🍳 ERROS GARÇOM: <strong id="emp_erros">—</strong></li>
+          <li>🚫 SEM FATURAMENTO: <strong id="emp_semfat">—</strong></li>
+          <li>🧩 OUTROS: <strong id="emp_outros">—</strong></li>
+        </ul>
 
-      // 🔹 Chama API recebimentos
-      const resp = await fetch(url, {
-        headers: { "Authorization": `Bearer ${accessToken}` }
-      });
-      const dados = await resp.json();
+        <canvas id="chartEmp" height="160"></canvas>
+      </article>
+    </section>
+  </main>
 
-      console.log("Resposta API:", dados); // 👀 debug no console
+  <script type="module">
+    import { buscarRecebimentos, formatBRL } from './src/api.js';
+    import { FORMS_MAP, CATEGORY_KEYWORDS, toCategory } from './src/mapping.js';
 
-      // 🔹 Ajusta acesso (dados pode ser array ou objeto com campo `dados`)
-      const lista = dados.dados || dados.items || dados || [];
+    // categorias mostradas e ordem nos cards/gráficos
+    const CATEGORY_ORDER = [
+      'dinheiro','crédito','débito','consumo interno','online','bonificação','pix',
+      'voucher','boleto','crediário','catálogo delivery','consumo sócio','marketing',
+      'transferência bancária','erros garçom','sem faturamento','outros'
+    ];
 
-      // 🔹 Preenche tabela
-      const tbody = document.querySelector("#tabela tbody");
-      tbody.innerHTML = "";
-      lista.forEach(item => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${item.id || "-"}</td>
-          <td>${item.data ? new Date(item.data).toLocaleDateString("pt-BR") : "-"}</td>
-          <td>R$ ${(item.valor || 0).toFixed(2)}</td>
-          <td>${item.formaPagamento || "-"}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+    const $ = (id) => document.getElementById(id);
 
-    } catch (e) {
-      console.error("Erro:", e);
-      alert("Falha ao carregar recebimentos!");
+    // datas default = hoje
+    const hoje = new Date();
+    const iso = (d) => d.toISOString().slice(0,10);
+    $('dataInicial').value = iso(hoje);
+    $('dataFinal').value   = iso(hoje);
+
+    let chartRest, chartEmp;
+
+    async function carregar() {
+      const dataInicial = $('dataInicial').value;
+      const dataFinal   = $('dataFinal').value;
+
+      try {
+        const page = await buscarRecebimentos({ dataInicial, dataFinal, start: 0, count: 500 }); // pega bastante
+        if (!page || !Array.isArray(page.items)) throw new Error('Sem itens');
+
+        // acumulares
+        const acc = {
+          restaurante: initBuckets(),
+          emporio:     initBuckets(),
+          almoco: 0, // 03:00–16:00
+        };
+
+        for (const rec of page.items) {
+          const loja = caixaToLoja(rec.numeroCaixa); // 'restaurante' ou 'emporio'
+          const horaReceb = horaDe(rec); // "HHmm"
+          const hh = parseInt(horaReceb.slice(0,2),10);
+
+          // finalizações somam por categoria
+          (rec.finalizacoes || []).forEach(fin => {
+            const finId = String(fin.finalizadoraId);
+            const descricao = FORMS_MAP[finId] || 'outros';
+            const cat = toCategory(descricao);
+            acc[loja][cat] += Number(fin.valor || 0);
+          });
+
+          // almoço 03:00–16:00 (independente de categoria/loja)
+          if (hh >= 3 && hh < 16) acc.almoco += Number(rec.valor || 0);
+        }
+
+        // totais
+        const totalRest = sumBuckets(acc.restaurante);
+        const totalEmp  = sumBuckets(acc.emporio);
+        const totalGeral = totalRest + totalEmp;
+
+        // escreve na tela (restaurante)
+        setGroupValues('rest', acc.restaurante);
+        $('totalRestaurante').innerText = `— R$ ${formatBRL(totalRest)}`;
+
+        // (empório)
+        setGroupValues('emp', acc.emporio);
+        $('totalEmporio').innerText = `— R$ ${formatBRL(totalEmp)}`;
+
+        // destaques
+        $('faturamentoTotal').innerText = `R$ ${formatBRL(totalGeral)}`;
+        $('almocoMercatto').innerText   = `R$ ${formatBRL(acc.almoco)}`;
+
+        // gráficos
+        renderChart('chartRest', 'Distribuição por Categoria', acc.restaurante, (c) => chartRest = c, chartRest);
+        renderChart('chartEmp',  'Distribuição por Categoria', acc.emporio,     (c) => chartEmp  = c, chartEmp);
+
+      } catch (e) {
+        alert('Falha ao carregar recebimentos!');
+        console.error(e);
+      }
     }
-  }
-</script>
 
+    function initBuckets() {
+      const o = {};
+      CATEGORY_ORDER.forEach(k => o[k] = 0);
+      return o;
+    }
+    const sumBuckets = (obj) => Object.values(obj).reduce((a,b)=>a+b,0);
+
+    function setGroupValues(prefix, buckets) {
+      const targetIds = {
+        'dinheiro': 'dinheiro',
+        'crédito': 'credito',
+        'débito': 'debito',
+        'consumo interno': 'consumo',
+        'online': 'online',
+        'bonificação': 'bonificacao',
+        'pix': 'pix',
+        'voucher': 'voucher',
+        'boleto': 'boleto',
+        'crediário': 'crediario',
+        'catálogo delivery': 'catalogo',
+        'consumo sócio': 'consumo_socio',
+        'marketing': 'marketing',
+        'transferência bancária': 'transf',
+        'erros garçom': 'erros',
+        'sem faturamento': 'semfat',
+        'outros': 'outros'
+      };
+      for (const [cat, idSuf] of Object.entries(targetIds)) {
+        $(prefix + '_' + idSuf).innerText = `R$ ${formatBRL(buckets[cat])}`;
+      }
+    }
+
+    function renderChart(canvasId, title, buckets, setRef, previous) {
+      const ctx = $(canvasId).getContext('2d');
+      if (previous) previous.destroy();
+      const data = CATEGORY_ORDER.map(c => buckets[c]);
+
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: CATEGORY_ORDER.map(capitalize),
+          datasets: [
+            { label: 'Valor (R$)', data }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: title }
+          },
+          scales: {
+            y: { ticks: { callback: (v)=> 'R$ ' + formatBRL(v) } }
+          }
+        }
+      });
+      setRef(chart);
+    }
+
+    function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+    // loja a partir do número do caixa
+    // caixas 001 até 004 => Empório; demais => Restaurante
+    function caixaToLoja(numeroCaixa="") {
+      const n = parseInt(String(numeroCaixa).padStart(3,'0'), 10);
+      return (n >= 1 && n <= 4) ? 'emporio' : 'restaurante';
+    }
+
+    // extrai hora "HHmm" do recebimento
+    function horaDe(rec) {
+      if (rec.hora && /^\d{4}$/.test(rec.hora)) return rec.hora;
+      // fallback para dataHoraFechamentoRecebimento
+      if (rec.dataHoraFechamentoRecebimento) {
+        const d = new Date(rec.dataHoraFechamentoRecebimento);
+        const h = String(d.getHours()).padStart(2,'0');
+        const m = String(d.getMinutes()).padStart(2,'0');
+        return h + m;
+      }
+      return '0000';
+    }
+
+    $('btnFiltrar').addEventListener('click', carregar);
+    window.addEventListener('load', carregar);
+  </script>
 </body>
 </html>

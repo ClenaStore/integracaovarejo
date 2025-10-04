@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recebimentos • Mercatto</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9fafb;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #2563eb;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      text-align: left;
+    }
+    th {
+      background: #2563eb;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>Recebimentos</h1>
+  <table id="tabela">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Data</th>
+        <th>Valor</th>
+        <th>Forma</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function carregarDados() {
+      try {
+        // 🔹 Chamada ao endpoint interno no Vercel (serverless function)
+        const login = await fetch("/api/login");
+        const { accessToken } = await login.json();
+
+        // 🔹 Agora usa o token para buscar recebimentos
+        const resp = await fetch("/api/recebimentos", {
+          headers: { "Authorization": `Bearer ${accessToken}` }
+        });
+        const dados = await resp.json();
+
+        // 🔹 Preenche tabela
+        const tbody = document.querySelector("#tabela tbody");
+        tbody.innerHTML = "";
+        dados.items?.forEach(item => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${item.id}</td>
+            <td>${new Date(item.data).toLocaleDateString("pt-BR")}</td>
+            <td>R$ ${item.valor.toFixed(2)}</td>
+            <td>${item.formaPagamento}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (e) {
+        console.error("Erro:", e);
+        alert("Falha ao carregar recebimentos!");
+      }
+    }
+
+    carregarDados();
+  </script>
+</body>
+</html>

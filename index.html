@@ -74,48 +74,54 @@
     <tbody></tbody>
   </table>
 
-  <script>
-    async function carregarDados() {
-      try {
-        const dataInicial = document.getElementById("dataInicial").value;
-        const dataFinal = document.getElementById("dataFinal").value;
+<script>
+  async function carregarDados() {
+    try {
+      const dataInicial = document.getElementById("dataInicial").value;
+      const dataFinal = document.getElementById("dataFinal").value;
 
-        // 🔹 Login (token)
-        const login = await fetch("/api/login");
-        const { accessToken } = await login.json();
+      // 🔹 Pega token do endpoint serverless no Vercel
+      const login = await fetch("/api/login");
+      const { accessToken } = await login.json();
 
-        // 🔹 Monta query de filtro
-        let url = `/api/recebimentos`;
-        const params = [];
-        if (dataInicial) params.push(`dataInicial=${dataInicial}`);
-        if (dataFinal) params.push(`dataFinal=${dataFinal}`);
-        if (params.length) url += "?" + params.join("&");
+      // 🔹 Monta query de filtro
+      let url = `/api/recebimentos`;
+      const params = [];
+      if (dataInicial) params.push(`dataInicial=${dataInicial}`);
+      if (dataFinal) params.push(`dataFinal=${dataFinal}`);
+      if (params.length) url += "?" + params.join("&");
 
-        // 🔹 Chama API recebimentos
-        const resp = await fetch(url, {
-          headers: { "Authorization": `Bearer ${accessToken}` }
-        });
-        const dados = await resp.json();
+      // 🔹 Chama API recebimentos
+      const resp = await fetch(url, {
+        headers: { "Authorization": `Bearer ${accessToken}` }
+      });
+      const dados = await resp.json();
 
-        // 🔹 Preenche tabela
-        const tbody = document.querySelector("#tabela tbody");
-        tbody.innerHTML = "";
-        dados.items?.forEach(item => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${item.id}</td>
-            <td>${new Date(item.data).toLocaleDateString("pt-BR")}</td>
-            <td>R$ ${item.valor.toFixed(2)}</td>
-            <td>${item.formaPagamento}</td>
-          `;
-          tbody.appendChild(tr);
-        });
+      console.log("Resposta API:", dados); // 👀 debug no console
 
-      } catch (e) {
-        console.error("Erro:", e);
-        alert("Falha ao carregar recebimentos!");
-      }
+      // 🔹 Ajusta acesso (dados pode ser array ou objeto com campo `dados`)
+      const lista = dados.dados || dados.items || dados || [];
+
+      // 🔹 Preenche tabela
+      const tbody = document.querySelector("#tabela tbody");
+      tbody.innerHTML = "";
+      lista.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${item.id || "-"}</td>
+          <td>${item.data ? new Date(item.data).toLocaleDateString("pt-BR") : "-"}</td>
+          <td>R$ ${(item.valor || 0).toFixed(2)}</td>
+          <td>${item.formaPagamento || "-"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+    } catch (e) {
+      console.error("Erro:", e);
+      alert("Falha ao carregar recebimentos!");
     }
-  </script>
+  }
+</script>
+
 </body>
 </html>

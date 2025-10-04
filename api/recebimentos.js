@@ -1,24 +1,78 @@
-export default async function handler(req, res) {
+export const config = { runtime: 'edge' };
+
+// cache simples por instância do runtime (pode expirar a qualquer momento)
+let cachedToken = null;
+let tokenTime = 0;
+const TOKEN_TTL_MS = 10 * 60 * 1000; // 10 minutos
+
+async function getToken() {
+  const now = Date.now();
+  if (cachedToken && now - tokenTime < TOKEN_TTL_MS) return cachedToken;
+
+  const r = await fetch(`${new URL(reqUrl('/api/login')).toString()}`);
+  // OBS: em runtime Edge não temos base URL. Construiremos de forma robusta no handler abaixo.
+  return null;
+}
+
+// como estamos no edge, vamos chamar /api/login via URL absoluta construída no handler
+async function doLoginAbsolute(origin) {
+  const r = await fetch(`${origin}/api/login`);
+  if (!r.ok) throw new Error(`login_failed_${r.status}`);
+  const j = await r.json();
+  return j?.accessToken;
+}
+
+export default async function handler(req) {
+  const { searchParams } = new URL(req.url);
+  const dataInicial = searchParams.get('dataInicial');
+  const dataFinal   = searchParams.get('dataFinal');
+  const start       = searchParams.get('start') || '0';
+  const count       = searchParams.get('count') || '100';
+
+  const VAREJO_URL = process.env.VAREJO_URL;
+  if (!VAREJO_URL) {
+    return new Response(JSON.stringify({ error: 'Missing VAREJO_URL' }), { status: 500 });
+  }
+
   try {
-    const { authorization } = req.headers;
-    const { dataInicial, dataFinal } = req.query;
+    // garante token
+    const origin = new URL(req.url).origin;
+    if (!cachedToken || (Date.now() - tokenTime) > TOKEN_TTL_MS) {
+      cachedToken = await doLoginAbsolute(origin);
+      tokenTime = Date.now();
+    }
 
-    // 🔹 Monta a URL com filtros
-    let url = "https://mercatto.varejofacil.com/api/v1/pdv/recebimentos?start=0&count=20";
-    if (dataInicial) url += `&dataInicial=${dataInicial}`;
-    if (dataFinal) url += `&dataFinal=${dataFinal}`;
+    const qs = new URLSearchParams({
+      datainicial: dataInicial,
+      dataFinal: dataFinal,
+      start: String(start),
+      count: String(count)
+    });
 
-    const response = await fetch(url, {
-      method: "GET",
+    let r = await fetch(`${VAREJO_URL}/api/v1/pdv/recebimentos?${qs.toString()}`, {
       headers: {
-        "Authorization": authorization,
-        "Accept": "application/json"
+        'Authorization': `Bearer ${cachedToken}`,
+        'Accept': 'application/json'
       }
     });
 
-    const data = await response.json();
-    return res.status(200).json(data);
-  } catch (err) {
-    return res.status(500).json({ error: "Erro ao buscar recebimentos", details: err.message });
+    // token expirou? tenta uma vez renovar
+    if (r.status === 401) {
+      cachedToken = await doLoginAbsolute(origin);
+      tokenTime = Date.now();
+      r = await fetch(`${VAREJO_URL}/api/v1/pdv/recebimentos?${qs.toString()}`, {
+        headers: { 'Authorization': `Bearer ${cachedToken}`, 'Accept':'application/json' }
+      });
+    }
+
+    if (!r.ok) {
+      const txt = await r.text();
+      return new Response(JSON.stringify({ error: 'fetch_failed', status: r.status, detail: txt }), { status: r.status });
+    }
+
+    const json = await r.json();
+    return new Response(JSON.stringify(json), { status: 200, headers: { 'Content-Type':'application/json' }});
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'exception', detail: String(e) }), { status: 500 });
   }
 }

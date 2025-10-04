@@ -15,6 +15,26 @@
       text-align: center;
       color: #2563eb;
     }
+    .filtros {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    input, button {
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -35,6 +55,13 @@
 </head>
 <body>
   <h1>Recebimentos</h1>
+
+  <div class="filtros">
+    <label>Data Inicial: <input type="date" id="dataInicial"></label>
+    <label>Data Final: <input type="date" id="dataFinal"></label>
+    <button onclick="carregarDados()">Filtrar</button>
+  </div>
+
   <table id="tabela">
     <thead>
       <tr>
@@ -50,12 +77,22 @@
   <script>
     async function carregarDados() {
       try {
-        // 🔹 Chamada ao endpoint interno no Vercel (serverless function)
+        const dataInicial = document.getElementById("dataInicial").value;
+        const dataFinal = document.getElementById("dataFinal").value;
+
+        // 🔹 Login (token)
         const login = await fetch("/api/login");
         const { accessToken } = await login.json();
 
-        // 🔹 Agora usa o token para buscar recebimentos
-        const resp = await fetch("/api/recebimentos", {
+        // 🔹 Monta query de filtro
+        let url = `/api/recebimentos`;
+        const params = [];
+        if (dataInicial) params.push(`dataInicial=${dataInicial}`);
+        if (dataFinal) params.push(`dataFinal=${dataFinal}`);
+        if (params.length) url += "?" + params.join("&");
+
+        // 🔹 Chama API recebimentos
+        const resp = await fetch(url, {
           headers: { "Authorization": `Bearer ${accessToken}` }
         });
         const dados = await resp.json();
@@ -79,8 +116,6 @@
         alert("Falha ao carregar recebimentos!");
       }
     }
-
-    carregarDados();
   </script>
 </body>
 </html>
